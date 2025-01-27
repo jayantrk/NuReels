@@ -89,13 +89,18 @@ app.get('/api/videos', (req, res) => {
   });
 });
 // Endpoint to upload video
-app.post('/upload', upload.single('video'), (req, res) => {
+app.post('/api/upload', upload.single('video'), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No file uploaded' });
   }
-
+  console.log("Video uploaded successfully");
   const videoUrl = `/uploads/${req.file.filename}`;
   res.status(200).json({ videoUrl });
+});
+
+app.get('/api/hello', (req, res) => {
+  // Send a simple "Hello World" response
+  res.send('Hello World');
 });
 
 app.listen(5000, () => {
