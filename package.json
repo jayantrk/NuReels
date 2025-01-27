@@ -1,0 +1,25 @@
+{
+  "name": "nureels",
+  "version": "1.0.0",
+  "description": "Nutanix platform to educate by reels",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jayantrk/NuReels.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jayantrk/NuReels/issues"
+  },
+  "homepage": "https://github.com/jayantrk/NuReels#readme",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "multer": "^1.4.5-lts.1"
+  }
+}
