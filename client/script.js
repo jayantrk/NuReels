@@ -150,10 +150,10 @@ const handleVideoEnd = () => {
 
 
 const handleScroll = (e) => {
-    e.preventDefault();
-
     // Ignore horizontal scroll
     if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+    e.preventDefault();
+
     // Throttle scroll events
     const now = Date.now();
     if (now - lastScrollTime < SCROLL_DELAY) return;
@@ -182,11 +182,40 @@ const handleScroll = (e) => {
     }
 };
 
+const handleKeyDown = (e) => {
+    // Ignore if it's not an arrow key
+    if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+    e.preventDefault();
+
+    // Throttle key events
+    const now = Date.now();
+    if (now - lastScrollTime < SCROLL_DELAY) return;
+    lastScrollTime = now;
+
+    let newIndex = videoIndex;
+
+    if (e.key === 'ArrowDown') {
+        newIndex = Math.min(videoIndex + 1, videoData.length - 1);
+    } else if (e.key === 'ArrowUp') {
+        newIndex = Math.max(videoIndex - 1, 0);
+    }
+
+    if (newIndex !== videoIndex) {
+        videoIndex = newIndex;
+        loadVideo();
+    }
+
+    if (videoIndex >= videoData.length - 3) {
+        fetchVideos();
+    }
+};
+
 // Fetch initial batch of videos
 fetchVideos().then(loadVideo);
 
-// Attach scroll event listener
+// Attach scroll/arrow event listener
 videoContainer.addEventListener('wheel', handleScroll, { passive: false });
+document.addEventListener('keydown', handleKeyDown);
 
 // Handle file selection
 fileInput.addEventListener('change', async (e) => {
