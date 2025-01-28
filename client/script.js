@@ -62,30 +62,30 @@ const createVideoElement = (videoUrl) => {
 };
 
 const preloadNextVideos = () => {
-    preloadedVideos.forEach(video => {
-      video.src = "";
-      video.load();
-      video.remove();
-    });
-    preloadedVideos = [];
+    // preloadedVideos.forEach(video => {
+    //   video.src = "";
+    //   video.load();
+    //   video.remove();
+    // });
+    // preloadedVideos = [];
 
-    // Preload 2 previous and 2 next videos relative to current index
-    const preloadOffsets = [-2, -1, 1, 2]; // Skip current (0)
+    // // Preload 2 previous and 2 next videos relative to current index
+    // const preloadOffsets = [-2, -1, 1, 2]; // Skip current (0)
 
-    preloadOffsets.forEach(offset => {
-      const targetIndex = videoIndex + offset;
+    // preloadOffsets.forEach(offset => {
+    //   const targetIndex = videoIndex + offset;
 
-      if (targetIndex >= 0 && targetIndex < videoData.length) {
-        const preloadVideo = document.createElement("video");
-        preloadVideo.preload = "auto";
-        preloadVideo.muted = true;
-        preloadVideo.src = videoData[targetIndex];
-        preloadVideo.style.display = "none";
-        document.body.appendChild(preloadVideo);
-        preloadedVideos.push(preloadVideo);
-      }
-    });
-    console.log('Preloaded videos:', preloadedVideos.length);
+    //   if (targetIndex >= 0 && targetIndex < videoData.length) {
+    //     const preloadVideo = document.createElement("video");
+    //     preloadVideo.preload = "auto";
+    //     preloadVideo.muted = true;
+    //     preloadVideo.src = videoData[targetIndex];
+    //     preloadVideo.style.display = "none";
+    //     document.body.appendChild(preloadVideo);
+    //     preloadedVideos.push(preloadVideo);
+    //   }
+    // });
+    // console.log('Preloaded videos:', preloadedVideos.length);
   };
 
 const loadVideo = () => {
