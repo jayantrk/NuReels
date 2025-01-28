@@ -85,12 +85,12 @@
 
             try {
                 console.log('Fetching videos...');
-                const response = await fetch('http://localhost:5000/api/videos');
+                const response = await fetch('http://10.111.59.235:5000/api/videos');
                 const data = await response.json();
 
                 if (data.videos && Array.isArray(data.videos)) {
                     data.videos.forEach((videoFileName) => {
-                        const videoUrl = `http://localhost:5000/uploads/${encodeURIComponent(videoFileName)}`;
+                        const videoUrl = `http://10.111.59.235:5000/uploads/${encodeURIComponent(videoFileName)}`;
                         if (!videoData.includes(videoUrl)) {
                             videoData.push(videoUrl);
                         }
@@ -202,7 +202,7 @@
                 formData.append('video', file);
 
                 try {
-                    const response = await fetch('http://localhost:5000/api/upload', {
+                    const response = await fetch('http://10.111.59.235:5000/api/upload', {
                         method: 'POST',
                         body: formData,
                     });
