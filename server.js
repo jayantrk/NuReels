@@ -5,6 +5,8 @@ const path = require('path');
 const fs = require('fs');
 const app = express();
 
+const ALLOWED_EXTENSIONS = new Set(['.mp4', '.mov']);
+
 // Setup multer for file uploads
 const storage = multer.diskStorage({
   destination: 'uploads/',
@@ -15,10 +17,21 @@ const storage = multer.diskStorage({
   },
 });
 
-const upload = multer({ storage });
-const cors = require('cors');
+const fileFilter = (req, file, cb) => {
+  const ext = path.extname(file.originalname).toLowerCase();
+  if (ALLOWED_EXTENSIONS.has(ext)) {
+    cb(null, true); // Accept file
+  } else {
+    cb(null, false); //Reject file
+  }
+};
 
-const ALLOWED_EXTENSIONS = new Set(['.mp4', '.mov']);
+const upload = multer({
+  storage,
+  fileFilter,
+  limits: { fileSize: 5000000 } // 50MB file size limit
+});
+const cors = require('cors');
 
 app.use(cors({
   origin: '*', // Allow all origins (for development only)
@@ -58,17 +71,24 @@ app.get('/api/videos', (req, res) => {
   });
 });
 // Endpoint to upload video
-app.post('/api/upload', upload.single('video'), (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ error: 'No file uploaded' });
-  }
-  // if (!files.every(file => path.extname(file))) {
-  //   return res.status(400).json({ error: 'Invalid file detected' });
-  // }
+app.post('/api/upload', (req, res) => {
+  upload.single('video')(req, res, (err) => {
+    if (err) {
+      console.log("Error uploading video", err);
+      // Handle Multer errors
+      return res.status(400).json({ error: err.message });
+    }
 
-  console.log("Video uploaded successfully");
-  const videoUrl = `/uploads/${req.file.filename}`;
-  res.status(200).json({ videoUrl });
+    if (!req.file) {
+      return res.status(400).json({
+        error: `Invalid file type. Allowed types: ${[...ALLOWED_EXTENSIONS].join(', ')}`
+      });
+    }
+
+    console.log("Video uploaded successfully");
+    const videoUrl = `/uploads/${req.file.filename}`;
+    res.status(200).json({ videoUrl });
+  });
 });
 
 app.get('/api/hello', (req, res) => {

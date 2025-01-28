@@ -20,7 +20,9 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            overflow-y: auto;
+            overflow-y: scroll;
+            scroll-snap-type: y mandatory;
+            scroll-behavior: smooth;
             max-height: 80vh;
             width: 90%;
             margin: 20px auto;
@@ -52,10 +54,7 @@
             font-size: 14px;
         }
         #upload-status {
-            transition: opacity 1.5s ease-in-out;
-        }
-        video {
-            transition: opacity 0.5s;
+            transition: opacity 2.5s ease-in-out;
         }
     </style>
 </head>
@@ -80,9 +79,7 @@
         const fileInput = document.getElementById('file-input');
         const uploadStatus = document.getElementById('upload-status');
 
-        // Fetch initial batch of videos (10 videos)
         const fetchVideos = async () => {
-            videoContainer.innerHTML = '';
             if (isFetching) return;
             isFetching = true;
 
@@ -90,21 +87,14 @@
                 console.log('Fetching videos...');
                 const response = await fetch('http://localhost:5000/api/videos');
                 const data = await response.json();
-                videoData.length = 0;
-                videoIndex = 0;
 
                 if (data.videos && Array.isArray(data.videos)) {
                     data.videos.forEach((videoFileName) => {
                         const videoUrl = `http://localhost:5000/uploads/${encodeURIComponent(videoFileName)}`;
-                        videoData.push(videoUrl);
+                        if (!videoData.includes(videoUrl)) {
+                            videoData.push(videoUrl);
+                        }
                     });
-                }
-
-                if (videoData.length > 0) {
-                    createVideoElement(videoData[0]);
-                } else {
-                    console.log('No videos found');
-                    videoContainer.innerHTML = '<p>Server unable to load videos</p>';
                 }
 
             } catch (error) {
@@ -132,13 +122,31 @@
             videoContainer.appendChild(currentVideoElement);
         };
 
+        const loadVideo = () => {
+            // Clear previous content
+            videoContainer.innerHTML = '';
+
+            if (videoData.length > videoIndex) {
+                createVideoElement(videoData[videoIndex]);
+            } else {
+                console.log('No videos found');
+                videoContainer.innerHTML = '<p>Server unable to load videos</p>';
+            }
+        };
+
         const handleVideoEnd = () => {
-            console.log('Video ended');
             console.log('videoIndex:', videoIndex);
+            console.log('Video ended');
             videoIndex++;
+
+            // Fetch more videos if the last video is being played
+            if (videoIndex === videoData.length - 1) {
+                fetchVideos();
+            }
 
             if (videoIndex < videoData.length) {
                 createVideoElement(videoData[videoIndex]);
+
             } else {
                 // Option 1: Loop playback
                 // videoIndex = 0;
@@ -148,12 +156,15 @@
                 // console.log('All videos played');
 
                 // Option 3: Fetch more videos
-                fetchVideos();
+                fetchVideos().then(loadVideo);
             }
         };
 
+
+        // TODO: THIS ISN'T CURRENTLY WORKING //
         // Function to handle scroll event for infinite scrolling
         const handleScroll = () => {
+            console.log('Scrolling...');
             if (window.innerHeight + window.scrollY >= document.body.scrollHeight - 200) {
                 // If the user is near the bottom, load more videos
                 if (videoIndex === videoData.length) {
@@ -164,7 +175,7 @@
         };
 
         // Fetch initial batch of videos
-        fetchVideos();
+        fetchVideos().then(loadVideo);
 
         // Attach scroll event listener
         window.addEventListener('scroll', handleScroll);
@@ -186,7 +197,7 @@
             }
 
             if (file) {
-                uploadStatus.textContent = 'Uploading...';
+                showUploadMessage('Uploading...');
                 const formData = new FormData();
                 formData.append('video', file);
 
@@ -200,13 +211,16 @@
                     if (data.videoUrl) {
                         showUploadMessage('Video uploaded successfully!');
                         fetchVideos(); // Fetch new videos to render after upload
+                    } else if (data.error) {
+                        showUploadMessage(data.error, true);
                     }
+
                 } catch (error) {
                     showUploadMessage('Upload failed!', true);
                     console.error('Error uploading video:', error);
                 }
             } else {
-                uploadStatus.textContent = 'Please upload only .mp4 files.';
+                uploadStatus.textContent = 'Please upload only .mp4 or .mov files.';
             }
         });
 
@@ -219,9 +233,9 @@
                 uploadStatus.style.opacity = '0';
                 setTimeout(() => {
                     uploadStatus.textContent = '';
-                }, 1500);
+                }, 2500);
 
-            }, 1000); // Show message for 1s before fading
+            }, 2000); // Show message for 1s before fading
         }
 
         // Trigger file input click on button click
