@@ -4,6 +4,14 @@ const { v4: uuidv4 } = require('uuid');
 const path = require('path');
 const fs = require('fs');
 const app = express();
+const https = require('https');
+
+
+// Read the self-signed certificate and private key
+const options = {
+  key: fs.readFileSync('~/private-key.pem'),
+  cert: fs.readFileSync('~/self-signed-cert.pem')
+};
 
 const ALLOWED_EXTENSIONS = new Set(['.mp4', '.mov']);
 
@@ -96,8 +104,7 @@ app.get('/api/hello', (req, res) => {
   res.send('Hello World');
 });
 
-app.listen(5000, () => {
-  console.log('Server is running on http://localhost:5000');
+// Start the HTTPS server
+https.createServer(options, app).listen(5000, () => {
+  console.log('Server running on https://localhost:5000');
 });
-
-
