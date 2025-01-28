@@ -2,3 +2,13 @@
 
 # Don't ignore .gitignore itself
 !.gitignore
+!city1.mp4
+!city3.mp4
+!city5.mp4
+!city7.mp4
+!space.mp4
+!city2.mp4
+!city4.mp4
+!city6.mp4
+!sample-5s.mp4
+!lower_quality.sh

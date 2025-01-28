@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Video Reels</title>
+    <title>NuReels</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -51,65 +51,104 @@
             margin-top: 10px;
             font-size: 14px;
         }
+        #upload-status {
+            transition: opacity 1.5s ease-in-out;
+        }
+        video {
+            transition: opacity 0.5s;
+        }
     </style>
 </head>
 <body>
 
-    <h1>Video Reels</h1>
+    <h1>NuReels</h1>
     <div id="video-container"></div>
 
     <!-- Upload Button -->
     <button id="upload-btn">Upload Video</button>
-    <input type="file" id="file-input" accept="video/mp4">
+    <input type="file" id="file-input" accept="video/mp4, video/quicktime" multiple>
 
     <div id="upload-status"></div>
 
     <script>
+        let currentVideoElement = null;
+        let videoData = [];
+        let videoIndex = 0;
+        let isFetching = false;
         const videoContainer = document.getElementById('video-container');
         const uploadBtn = document.getElementById('upload-btn');
         const fileInput = document.getElementById('file-input');
         const uploadStatus = document.getElementById('upload-status');
-        let videoData = [];
-        let videoIndex = 0;
-        let isFetching = false;
 
         // Fetch initial batch of videos (10 videos)
         const fetchVideos = async () => {
+            videoContainer.innerHTML = '';
             if (isFetching) return;
             isFetching = true;
 
             try {
+                console.log('Fetching videos...');
                 const response = await fetch('http://localhost:5000/api/videos');
                 const data = await response.json();
+                videoData.length = 0;
+                videoIndex = 0;
 
-                // Store video URLs in videoData
-                data.videos.forEach((videoFileName) => {
-                    const videoUrl = `http://localhost:5000/uploads/${videoFileName}`;
-                    videoData.push(videoUrl);
-                });
+                if (data.videos && Array.isArray(data.videos)) {
+                    data.videos.forEach((videoFileName) => {
+                        const videoUrl = `http://localhost:5000/uploads/${encodeURIComponent(videoFileName)}`;
+                        videoData.push(videoUrl);
+                    });
+                }
 
-                loadVideos(); // Load the first batch
+                if (videoData.length > 0) {
+                    createVideoElement(videoData[0]);
+                } else {
+                    console.log('No videos found');
+                    videoContainer.innerHTML = '<p>Server unable to load videos</p>';
+                }
+
             } catch (error) {
                 console.error('Error fetching videos:', error);
             } finally {
+                console.log('Videos fetched:', videoData);
                 isFetching = false;
             }
         };
 
         // Function to render videos on the UI
         const createVideoElement = (videoUrl) => {
-            const videoElement = document.createElement('video');
-            videoElement.setAttribute('controls', true);
-            videoElement.setAttribute('src', videoUrl);
-            videoContainer.appendChild(videoElement);
+            if (currentVideoElement) {
+                currentVideoElement.removeEventListener('ended', handleVideoEnd);
+                currentVideoElement.remove();
+            }
+            currentVideoElement = document.createElement('video');
+            currentVideoElement.controls = true;
+            currentVideoElement.autoplay = true;
+            currentVideoElement.muted = true;
+            currentVideoElement.playsInline = true;
+            currentVideoElement.src = videoUrl;
+
+            currentVideoElement.addEventListener('ended', handleVideoEnd);
+            videoContainer.appendChild(currentVideoElement);
         };
 
-        // Function to load and display the videos
-        const loadVideos = () => {
+        const handleVideoEnd = () => {
+            console.log('Video ended');
+            console.log('videoIndex:', videoIndex);
+            videoIndex++;
+
             if (videoIndex < videoData.length) {
-                const videoUrl = videoData[videoIndex];
-                createVideoElement(videoUrl);
-                videoIndex++;
+                createVideoElement(videoData[videoIndex]);
+            } else {
+                // Option 1: Loop playback
+                // videoIndex = 0;
+                // createVideoElement(videoData[videoIndex]);
+
+                // Option 2: Stop playback
+                // console.log('All videos played');
+
+                // Option 3: Fetch more videos
+                fetchVideos();
             }
         };
 
@@ -117,7 +156,6 @@
         const handleScroll = () => {
             if (window.innerHeight + window.scrollY >= document.body.scrollHeight - 200) {
                 // If the user is near the bottom, load more videos
-                loadVideos();
                 if (videoIndex === videoData.length) {
                     // If all videos are loaded, fetch new videos
                     fetchVideos();
@@ -134,7 +172,20 @@
         // Handle file selection
         fileInput.addEventListener('change', async (e) => {
             const file = e.target.files[0];
-            if (file && file.type === 'video/mp4') {
+            const allowedTypes = ['video/mp4', 'video/quicktime'];
+            const maxSizeMB = 50;
+            if (!allowedTypes.includes(file.type)) {
+                uploadStatus.textContent = 'Only MP4 and MOV files are allowed!';
+                e.target.value = '';
+                return;
+            }
+            if (file.size > maxSizeMB * 1024 * 1024) {
+                uploadStatus.textContent = 'File size exceeds 100MB limit!';
+                e.target.value = '';
+                return;
+            }
+
+            if (file) {
                 uploadStatus.textContent = 'Uploading...';
                 const formData = new FormData();
                 formData.append('video', file);
@@ -147,17 +198,31 @@
 
                     const data = await response.json();
                     if (data.videoUrl) {
-                        uploadStatus.textContent = 'Video uploaded successfully!';
+                        showUploadMessage('Video uploaded successfully!');
                         fetchVideos(); // Fetch new videos to render after upload
                     }
                 } catch (error) {
-                    uploadStatus.textContent = 'Error uploading video.';
+                    showUploadMessage('Upload failed!', true);
                     console.error('Error uploading video:', error);
                 }
             } else {
                 uploadStatus.textContent = 'Please upload only .mp4 files.';
             }
         });
+
+        function showUploadMessage(message, isError = false) {
+            uploadStatus.textContent = message;
+            uploadStatus.style.color = isError ? 'red' : 'green';
+            uploadStatus.style.opacity = '1';
+
+            setTimeout(() => {
+                uploadStatus.style.opacity = '0';
+                setTimeout(() => {
+                    uploadStatus.textContent = '';
+                }, 1500);
+
+            }, 1000); // Show message for 1s before fading
+        }
 
         // Trigger file input click on button click
         uploadBtn.addEventListener('click', () => {
