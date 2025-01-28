@@ -1,66 +1,36 @@
-// const express = require('express');
-// const multer = require('multer');
-// const path = require('path');
-// const fs = require('fs');
-// const app = express();
-// const PORT = 3000;
-
-// // Set up multer storage
-// const storage = multer.diskStorage({
-//   destination: (req, file, cb) => {
-//     const uploadPath = path.join(__dirname, 'uploads');
-//     if (!fs.existsSync(uploadPath)) {
-//       fs.mkdirSync(uploadPath);
-//     }
-//     cb(null, uploadPath);
-//   },
-//   filename: (req, file, cb) => {
-//     const fileName = `${Date.now()}-${file.originalname}`;
-//     cb(null, fileName);
-//   }
-// });
-
-// // Initialize multer
-// const upload = multer({ storage });
-
-// const cors = require('cors');
-// app.use(cors({
-//   origin: '*', // Allow all origins (for development only)
-// }));
-
-// // Serve static video files
-// app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-// // Upload endpoint to handle video uploads
-// app.post('/upload', upload.single('video'), (req, res) => {
-//   if (!req.file) {
-//     return res.status(400).send('No file uploaded');
-//   }
-
-//   const videoMetadata = {
-//     filename: req.file.originalname,
-//     videoUrl: `/uploads/${req.file.filename}`,
-//   };
-
-//   res.status(200).json(videoMetadata); // Send back the URL of the uploaded video
-// });
-
-// // Serve the frontend HTML (if needed)
-// app.use(express.static(path.join(__dirname, 'public')));
-
-// // Start server
-// app.listen(PORT, () => {
-//   console.log(`Server is running on http://localhost:${PORT}`);
-// });
-
 const express = require('express');
 const multer = require('multer');
+const { v4: uuidv4 } = require('uuid');
 const path = require('path');
 const fs = require('fs');
 const app = express();
 
+const ALLOWED_EXTENSIONS = new Set(['.mp4', '.mov']);
+
 // Setup multer for file uploads
-const upload = multer({ dest: 'uploads/' });
+const storage = multer.diskStorage({
+  destination: 'uploads/',
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    const uniqueId = uuidv4();
+    cb(null, `${uniqueId}${ext}`);
+  },
+});
+
+const fileFilter = (req, file, cb) => {
+  const ext = path.extname(file.originalname).toLowerCase();
+  if (ALLOWED_EXTENSIONS.has(ext)) {
+    cb(null, true); // Accept file
+  } else {
+    cb(null, false); //Reject file
+  }
+};
+
+const upload = multer({
+  storage,
+  fileFilter,
+  limits: { fileSize: 5000000 } // 50MB file size limit
+});
 const cors = require('cors');
 
 app.use(cors({
@@ -71,6 +41,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Route to fetch video file names
 app.get('/api/videos', (req, res) => {
+  console.log("Fetching video files");
   const videoFolderPath = path.join(__dirname, 'uploads');
   fs.readdir(videoFolderPath, (err, files) => {
       if (err) {
@@ -79,23 +50,50 @@ app.get('/api/videos', (req, res) => {
 
       // Filter to only get video files (e.g., .mp4, .mov)
       const videoFiles = files.filter(file => {
-          return file.endsWith('.mp4') || file.endsWith('.mov'); // Adjust according to your file types
+        const ext = path.extname(file).toLowerCase();
+        return ALLOWED_EXTENSIONS.has(ext);
       });
 
-      // Randomly shuffle the files and return the first 10
-      const shuffledVideos = videoFiles.sort(() => 0.5 - Math.random()).slice(0, 10);
+      // Randomly shuffle the files and return the first 3
+      const shuffledVideos = videoFiles.sort(() => 0.5 - Math.random()).slice(0, 3);
 
-      res.json({ videos: shuffledVideos });
+      const videos = shuffledVideos.map(file => ({
+        filename: file,
+        url: `/uploads/${encodeURIComponent(file)}`
+      }));
+
+      if (videos.length === 0) {
+        return res.status(404).json({ message: 'No videos found' });
+      }
+
+      res.status(200).json({ videos: shuffledVideos });
+
   });
 });
 // Endpoint to upload video
-app.post('/upload', upload.single('video'), (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ error: 'No file uploaded' });
-  }
+app.post('/api/upload', (req, res) => {
+  upload.single('video')(req, res, (err) => {
+    if (err) {
+      console.log("Error uploading video", err);
+      // Handle Multer errors
+      return res.status(400).json({ error: err.message });
+    }
 
-  const videoUrl = `/uploads/${req.file.filename}`;
-  res.status(200).json({ videoUrl });
+    if (!req.file) {
+      return res.status(400).json({
+        error: `Invalid file type. Allowed types: ${[...ALLOWED_EXTENSIONS].join(', ')}`
+      });
+    }
+
+    console.log("Video uploaded successfully");
+    const videoUrl = `/uploads/${req.file.filename}`;
+    res.status(200).json({ videoUrl });
+  });
+});
+
+app.get('/api/hello', (req, res) => {
+  // Send a simple "Hello World" response
+  res.send('Hello World');
 });
 
 app.listen(5000, () => {
