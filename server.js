@@ -29,7 +29,7 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 5000000 } // 50MB file size limit
+  limits: { fileSize: 50000000 } // 50MB file size limit
 });
 const cors = require('cors');
 
