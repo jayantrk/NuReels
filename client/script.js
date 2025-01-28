@@ -1,5 +1,6 @@
 let currentVideoElement = null;
 let videoData = [];
+let preloadedVideos = [];
 let videoIndex = 0;
 let isFetching = false;
 const videoContainer = document.getElementById('video-container');
@@ -16,10 +17,10 @@ const fetchVideos = async () => {
         const response = await fetch('http://localhost:5000/api/videos');
         const data = await response.json();
 
-        if (data.videos && Array.isArray(data.videos)) {
+        if (data.videos?.length) {
             data.videos.forEach((videoFileName) => {
                 const videoUrl = `http://localhost:5000/uploads/${encodeURIComponent(videoFileName)}`;
-                if (!videoData.includes(videoUrl)) {
+                if (!videoData.some(url => url === videoUrl)) {
                     videoData.push(videoUrl);
                 }
             });
@@ -30,32 +31,69 @@ const fetchVideos = async () => {
     } finally {
         console.log('Videos fetched:', videoData);
         isFetching = false;
+        if (videoIndex >= videoData.length - 1) {
+            preloadNextVideos();
+        }
     }
 };
 
-// Function to render videos on the UI
 const createVideoElement = (videoUrl) => {
     if (currentVideoElement) {
         currentVideoElement.removeEventListener('ended', handleVideoEnd);
         currentVideoElement.remove();
     }
-    currentVideoElement = document.createElement('video');
-    currentVideoElement.controls = true;
-    currentVideoElement.autoplay = true;
-    currentVideoElement.muted = true;
-    currentVideoElement.playsInline = true;
-    currentVideoElement.src = videoUrl;
+    const existingPreload = preloadedVideos.find(v => v.src === videoUrl);
+    if (existingPreload) {
+        currentVideoElement = existingPreload;
+        currentVideoElement.style.display = 'block';
+        // Remove from preload list
+        preloadedVideos = preloadedVideos.filter(v => v !== existingPreload);
+    } else {
+        currentVideoElement = document.createElement('video');
+        currentVideoElement.controls = true;
+        currentVideoElement.autoplay = true;
+        currentVideoElement.muted = true;
+        currentVideoElement.playsInline = true;
+        currentVideoElement.src = videoUrl;
+    }
 
     currentVideoElement.addEventListener('ended', handleVideoEnd);
     videoContainer.appendChild(currentVideoElement);
 };
 
+const preloadNextVideos = () => {
+    preloadedVideos.forEach(video => {
+      video.src = "";
+      video.load();
+      video.remove();
+    });
+    preloadedVideos = [];
+
+    // Preload 2 previous and 2 next videos relative to current index
+    const preloadOffsets = [-2, -1, 1, 2]; // Skip current (0)
+
+    preloadOffsets.forEach(offset => {
+      const targetIndex = videoIndex + offset;
+
+      if (targetIndex >= 0 && targetIndex < videoData.length) {
+        const preloadVideo = document.createElement("video");
+        preloadVideo.preload = "auto";
+        preloadVideo.muted = true;
+        preloadVideo.src = videoData[targetIndex];
+        preloadVideo.style.display = "none";
+        document.body.appendChild(preloadVideo);
+        preloadedVideos.push(preloadVideo);
+      }
+    });
+    console.log('Preloaded videos:', preloadedVideos.length);
+  };
+
 const loadVideo = () => {
     // Clear previous content
     videoContainer.innerHTML = '';
-
     if (videoData.length > videoIndex) {
         createVideoElement(videoData[videoIndex]);
+        preloadNextVideos();
     } else {
         console.log('No videos found');
         videoContainer.innerHTML = '<p>Server unable to load videos</p>';
@@ -67,18 +105,17 @@ const handleVideoEnd = () => {
     console.log('Video ended');
     videoIndex++;
 
-    // Fetch more videos if the last video is being played
-    if (videoIndex === videoData.length - 1) {
+    // Fetch more videos
+    if (videoIndex >= videoData.length - 3) {
         fetchVideos();
-    }
+      }
 
     if (videoIndex < videoData.length) {
-        createVideoElement(videoData[videoIndex]);
-
+        loadVideo();
     } else {
         // Option 1: Loop playback
         // videoIndex = 0;
-        // createVideoElement(videoData[videoIndex]);
+        // loadVideo();
 
         // Option 2: Stop playback
         // console.log('All videos played');
@@ -89,17 +126,13 @@ const handleVideoEnd = () => {
 };
 
 
-// TODO: THIS ISN'T CURRENTLY WORKING //
-// Function to handle scroll event for infinite scrolling
 const handleScroll = () => {
     console.log('Scrolling...');
-    if (window.innerHeight + window.scrollY >= document.body.scrollHeight - 200) {
-        // If the user is near the bottom, load more videos
-        if (videoIndex === videoData.length) {
-            // If all videos are loaded, fetch new videos
-            fetchVideos();
-        }
-    }
+    // if (window.innerHeight + window.scrollY >= document.body.scrollHeight - 200) {
+    //     if (videoIndex === videoData.length) {
+    //         fetchVideos();
+    //     }
+    // }
 };
 
 // Fetch initial batch of videos

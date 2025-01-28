@@ -19,6 +19,7 @@ body {
   height: 80vh;
   width: 90%;
   margin: 20px auto;
+  gap: 20px;
 }
 video {
   width: 100%;
@@ -26,6 +27,8 @@ video {
   margin: 10px 0;
   flex-shrink: 0;
   scroll-snap-align: start;
+  height: 80vh;
+  object-fit: contain;
 }
 #upload-btn {
   position: fixed;

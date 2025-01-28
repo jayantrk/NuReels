@@ -54,8 +54,8 @@ app.get('/api/videos', (req, res) => {
         return ALLOWED_EXTENSIONS.has(ext);
       });
 
-      // Randomly shuffle the files and return the first 3
-      const shuffledVideos = videoFiles.sort(() => 0.5 - Math.random()).slice(0, 3);
+      // Randomly shuffle the files and return the first 5
+      const shuffledVideos = videoFiles.sort(() => 0.5 - Math.random()).slice(0, 5);
 
       const videos = shuffledVideos.map(file => ({
         filename: file,
