@@ -3,6 +3,8 @@ let videoData = [];
 let preloadedVideos = [];
 let videoIndex = 0;
 let isFetching = false;
+let lastScrollTime = 0;
+const SCROLL_DELAY = 500;
 const videoContainer = document.getElementById('video-container');
 const uploadBtn = document.getElementById('upload-btn');
 const fileInput = document.getElementById('file-input');
@@ -13,7 +15,7 @@ const fetchVideos = async () => {
     isFetching = true;
 
     try {
-        console.log('Fetching videos...');
+        // console.log('Fetching videos...');
         const response = await fetch('http://localhost:5000/api/videos');
         const data = await response.json();
 
@@ -29,7 +31,6 @@ const fetchVideos = async () => {
     } catch (error) {
         console.error('Error fetching videos:', error);
     } finally {
-        console.log('Videos fetched:', videoData);
         isFetching = false;
         if (videoIndex >= videoData.length - 1) {
             preloadNextVideos();
@@ -50,48 +51,71 @@ const createVideoElement = (videoUrl) => {
         preloadedVideos = preloadedVideos.filter(v => v !== existingPreload);
     } else {
         currentVideoElement = document.createElement('video');
-        currentVideoElement.controls = true;
-        currentVideoElement.autoplay = true;
-        currentVideoElement.muted = true;
-        currentVideoElement.playsInline = true;
         currentVideoElement.src = videoUrl;
     }
+    currentVideoElement.controls = true;
+    currentVideoElement.playsInline = true;
+    currentVideoElement.currentTime = 0;
+    currentVideoElement.autoplay = true;
+    currentVideoElement.muted = true;
+
+    const videoWrapper = document.createElement('div');
+    videoWrapper.className = 'video-wrapper';
+    videoWrapper.appendChild(currentVideoElement);
+    videoContainer.appendChild(videoWrapper);
 
     currentVideoElement.addEventListener('ended', handleVideoEnd);
-    videoContainer.appendChild(currentVideoElement);
+    currentVideoElement.play().catch(error => {
+        console.log('Autoplay blocked, consider user interaction');
+    });
 };
 
 const preloadNextVideos = () => {
-    // preloadedVideos.forEach(video => {
-    //   video.src = "";
-    //   video.load();
-    //   video.remove();
-    // });
-    // preloadedVideos = [];
+    // Define preload window (current index +- 2)
+    const preloadWindow = [-2, -1, 1, 2];
+    const targetIndices = preloadWindow.map(offset => videoIndex + offset);
+    const targetUrls = new Set(
+        targetIndices
+            .filter(idx => idx >= 0 && idx < videoData.length)
+            .map(idx => videoData[idx])
+    );
 
-    // // Preload 2 previous and 2 next videos relative to current index
-    // const preloadOffsets = [-2, -1, 1, 2]; // Skip current (0)
+    // Cleanup: Remove videos outside the preload window
+    preloadedVideos.forEach((video, index) => {
+        if (!targetUrls.has(video.src)) {
+            console.log('Removing video:', video.src);
+            video.src = "";
+            video.remove();
+            preloadedVideos[index] = null;
+        }
+    });
+    // Remove null entries from array
+    preloadedVideos = preloadedVideos.filter(Boolean);
 
-    // preloadOffsets.forEach(offset => {
-    //   const targetIndex = videoIndex + offset;
+    // Preload new videos in the window
+    targetIndices.forEach((targetIndex) => {
+        if (targetIndex < 0 || targetIndex >= videoData.length) return;
 
-    //   if (targetIndex >= 0 && targetIndex < videoData.length) {
-    //     const preloadVideo = document.createElement("video");
-    //     preloadVideo.preload = "auto";
-    //     preloadVideo.muted = true;
-    //     preloadVideo.src = videoData[targetIndex];
-    //     preloadVideo.style.display = "none";
-    //     document.body.appendChild(preloadVideo);
-    //     preloadedVideos.push(preloadVideo);
-    //   }
-    // });
-    // console.log('Preloaded videos:', preloadedVideos.length);
-  };
+        const videoUrl = videoData[targetIndex];
+        const isAlreadyPreloaded = preloadedVideos.some(v => v.src === videoUrl);
+        if (!isAlreadyPreloaded) {
+            const preloadVideo = document.createElement("video");
+            preloadVideo.preload = "auto";
+            preloadVideo.muted = true;
+            preloadVideo.src = videoUrl;
+            preloadVideo.style.display = "none";
+            document.body.appendChild(preloadVideo);
+            preloadedVideos.push(preloadVideo);
+        }
+    });
+
+    console.log('Preloaded videos:', preloadedVideos.map(v => v.src));
+};
 
 const loadVideo = () => {
-    // Clear previous content
     videoContainer.innerHTML = '';
     if (videoData.length > videoIndex) {
+        console.log(videoIndex, videoData.length - 1);
         createVideoElement(videoData[videoIndex]);
         preloadNextVideos();
     } else {
@@ -102,7 +126,6 @@ const loadVideo = () => {
 
 const handleVideoEnd = () => {
     console.log('videoIndex:', videoIndex);
-    console.log('Video ended');
     videoIndex++;
 
     // Fetch more videos
@@ -126,20 +149,44 @@ const handleVideoEnd = () => {
 };
 
 
-const handleScroll = () => {
-    console.log('Scrolling...');
-    // if (window.innerHeight + window.scrollY >= document.body.scrollHeight - 200) {
-    //     if (videoIndex === videoData.length) {
-    //         fetchVideos();
-    //     }
-    // }
+const handleScroll = (e) => {
+    e.preventDefault();
+
+    // Ignore horizontal scroll
+    if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+    // Throttle scroll events
+    const now = Date.now();
+    if (now - lastScrollTime < SCROLL_DELAY) return;
+    lastScrollTime = now;
+
+    // Determine scroll direction
+    const isScrollDown = e.deltaY > 0;
+
+    let newIndex = videoIndex;
+
+    if (isScrollDown) {
+        newIndex = Math.min(videoIndex + 1, videoData.length - 1);
+    } else {
+        newIndex = Math.max(videoIndex - 1, 0);
+    }
+
+    // Only update if index changed
+    if (newIndex !== videoIndex) {
+        videoIndex = newIndex;
+        loadVideo();
+    }
+
+    // Fetch more videos when approaching end
+    if (videoIndex >= videoData.length - 3) {
+        fetchVideos();
+    }
 };
 
 // Fetch initial batch of videos
 fetchVideos().then(loadVideo);
 
 // Attach scroll event listener
-videoContainer.addEventListener('scroll', handleScroll);
+videoContainer.addEventListener('wheel', handleScroll, { passive: false });
 
 // Handle file selection
 fileInput.addEventListener('change', async (e) => {
@@ -196,7 +243,7 @@ function showUploadMessage(message, isError = false) {
             uploadStatus.textContent = '';
         }, 2500);
 
-    }, 2000); // Show message for 1s before fading
+    }, 2000); // Show message for 2s before fading
 }
 
 // Trigger file input click on button click
