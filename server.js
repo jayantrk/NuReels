@@ -9,8 +9,8 @@ const https = require('https');
 
 // Read the self-signed certificate and private key
 const options = {
-  key: fs.readFileSync('~/private-key.pem'),
-  cert: fs.readFileSync('~/self-signed-cert.pem')
+  key: fs.readFileSync('/home/jayant.kalani/private-key.pem'),
+  cert: fs.readFileSync('/home/jayant.kalani/self-signed-cert.pem')
 };
 
 const ALLOWED_EXTENSIONS = new Set(['.mp4', '.mov']);
