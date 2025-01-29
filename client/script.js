@@ -100,8 +100,7 @@ const createVideoElement = (videoObject) => {
 
     currentVideoElement.play().catch(error => {
         console.log('Autoplay blocked:', error);
-        videoIndex++;
-        loadVideo();
+        handleVideoEnd();
     });
 };
 
