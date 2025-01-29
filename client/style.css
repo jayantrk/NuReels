@@ -69,6 +69,15 @@ video {
   left: 0;
   transform: translateY(10px);
 }
+.mute-button {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  cursor: pointer;
+  z-index: 2;
+  font-size: 28px;
+  user-select: none;
+}
 #upload-btn {
   position: fixed;
   bottom: 20px;

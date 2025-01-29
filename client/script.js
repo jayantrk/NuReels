@@ -1,5 +1,6 @@
 let currentVideoElement = null;
 let currentVideoWrapper = null;
+let globalMuteState = true;
 let videoData = [];
 let preloadedVideos = [];
 let videoIndex = 0;
@@ -67,6 +68,7 @@ const createVideoElement = (videoObject) => {
     const statusElement = videoWrapper.querySelector('.upload-status');
     const descriptionOverlay = videoWrapper.querySelector('.description-overlay');
     const teamOverlay = videoWrapper.querySelector('.team-overlay');
+    const muteButton = videoWrapper.querySelector('.mute-button');
     const existingPreload = preloadedVideos.find(v => v.src === videoUrl);
 
     if (existingPreload) {
@@ -82,10 +84,11 @@ const createVideoElement = (videoObject) => {
     currentVideoElement.playsInline = true;
     currentVideoElement.currentTime = 0;
     currentVideoElement.autoplay = true;
-    currentVideoElement.muted = true;
+    currentVideoElement.muted = globalMuteState;
 
     descriptionOverlay.textContent = description;
     teamOverlay.textContent = team;
+    updateMuteIcon(currentVideoElement, muteButton);
 
     videoContainer.appendChild(videoWrapper);
     videoWrapper.uploadStatus = statusElement;
@@ -101,8 +104,34 @@ const createVideoElement = (videoObject) => {
 
 const handleVideoClick = (event) => {
     const video = event.currentTarget;
-    video[video.paused ? 'play' : 'pause']();
+    // Only handle play/pause if click wasn't on mute button
+    if (!event.target.classList.contains('mute-button')) {
+        video[video.paused ? 'play' : 'pause']();
+    }
 };
+
+const toggleMute = (videoElement, muteButton) => {
+    videoElement.muted = !videoElement.muted;
+    globalMuteState = videoElement.muted;
+    updateMuteIcon(videoElement, muteButton);
+};
+
+const updateMuteIcon = (videoElement, muteButton) => {
+    muteButton.textContent = videoElement.muted ? '🔇' : '🔊';
+};
+
+document.addEventListener('click', (e) => {
+    if (e.target.closest('.mute-button')) {
+        const wrapper = e.target.closest('.video-wrapper');
+        const video = wrapper?.querySelector('video');
+        const muteButton = wrapper?.querySelector('.mute-button');
+
+        if (video && muteButton) {
+            e.stopPropagation();
+            toggleMute(video, muteButton);
+        }
+    }
+});
 
 const preloadNextVideos = () => {
     // Define preload window (current index +- 2)
@@ -165,7 +194,7 @@ const handleVideoEnd = () => {
     // Fetch more videos
     if (videoIndex >= videoData.length - 3) {
         fetchVideos();
-      }
+    }
 
     if (videoIndex < videoData.length) {
         loadVideo();
