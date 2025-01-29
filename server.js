@@ -4,15 +4,15 @@ const { v4: uuidv4 } = require('uuid');
 const path = require('path');
 const fs = require('fs');
 const app = express();
-const https = require('https');
+// const https = require('https');
 
 
 // Read the self-signed certificate and private key
-const options = {
-  key: fs.readFileSync('/home/jayant.kalani/private-key.pem'),
-  cert: fs.readFileSync('/home/jayant.kalani/self-signed-cert.pem'),
-  passpharse: 'jayant'
-};
+// const options = {
+//   key: fs.readFileSync('/home/jayant.kalani/private-key.pem'),
+//   cert: fs.readFileSync('/home/jayant.kalani/self-signed-cert.pem'),
+//   passpharse: 'jayant'
+// };
 
 const ALLOWED_EXTENSIONS = new Set(['.mp4', '.mov']);
 
@@ -106,6 +106,6 @@ app.get('/api/hello', (req, res) => {
 });
 
 // Start the HTTPS server
-https.createServer(options, app).listen(5000, () => {
-  console.log('Server running on https://localhost:5000');
+app.listen(5000, () => {
+  console.log('Server running on http://localhost:5000');
 });
