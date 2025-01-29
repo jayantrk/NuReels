@@ -53,6 +53,7 @@ button:hover {
   scroll-snap-align: start;
   border-radius: 15px;
   overflow: hidden;
+  display: inline-block;
 }
 /* Padding-top trick to maintain 9:16 aspect ratio */
 .video-wrapper::before {
@@ -102,4 +103,28 @@ video {
   width: 50px;
   height: 50px;
   margin-right: 3px;
+}
+.description-overlay {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  color: white;
+  font-size: 12px;
+  text-align: left;
+  z-index: 10;
+  padding: 10px;
+  border-radius: 15px;
+  opacity: 0.85;
+}
+.team-overlay {
+  position: absolute;
+  bottom: 30px;
+  left: 10px;
+  color: white;
+  font-size: 14px;
+  text-align: left;
+  z-index: 10;
+  padding: 10px;
+  border-radius: 15px;
+  opacity: 0.85;
 }

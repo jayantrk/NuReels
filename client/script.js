@@ -15,14 +15,15 @@ const fetchVideos = async () => {
     isFetching = true;
 
     try {
-        // console.log('Fetching videos...');
         const response = await fetch('http://localhost:5000/api/videos');
         const data = await response.json();
+        // console.log('Fetched videos:', data);
 
         if (data.videos?.length) {
             data.videos.forEach((videoFileName) => {
                 const videoUrl = `http://localhost:5000/uploads/${encodeURIComponent(videoFileName)}`;
                 if (!videoData.some(url => url === videoUrl)) {
+                    // CHANGE TO GET TEAM NAME AND DESCRIPTION WHEN READY
                     videoData.push(videoUrl);
                 }
             });
@@ -38,9 +39,10 @@ const fetchVideos = async () => {
     }
 };
 
-const createVideoElement = (videoUrl) => {
+const createVideoElement = (videoUrl, team='Team R&D', description='test') => {
     if (currentVideoElement) {
         currentVideoElement.removeEventListener('ended', handleVideoEnd);
+        currentVideoElement.removeEventListener('click', handleVideoClick);
         currentVideoElement.remove();
     }
     const existingPreload = preloadedVideos.find(v => v.src === videoUrl);
@@ -53,7 +55,7 @@ const createVideoElement = (videoUrl) => {
         currentVideoElement = document.createElement('video');
         currentVideoElement.src = videoUrl;
     }
-    currentVideoElement.controls = true;
+    currentVideoElement.controls = false;
     currentVideoElement.playsInline = true;
     currentVideoElement.currentTime = 0;
     currentVideoElement.autoplay = true;
@@ -62,12 +64,31 @@ const createVideoElement = (videoUrl) => {
     const videoWrapper = document.createElement('div');
     videoWrapper.className = 'video-wrapper';
     videoWrapper.appendChild(currentVideoElement);
+
+    const descriptionOverlay = document.createElement('div');
+    descriptionOverlay.className = 'description-overlay';
+    descriptionOverlay.textContent = description;
+    const teamOverlay = document.createElement('div');
+    teamOverlay.className = 'team-overlay';
+    teamOverlay.textContent = team;
+
+    videoWrapper.appendChild(descriptionOverlay);
+    videoWrapper.appendChild(teamOverlay);
     videoContainer.appendChild(videoWrapper);
 
+    currentVideoElement.addEventListener('click', handleVideoClick);
     currentVideoElement.addEventListener('ended', handleVideoEnd);
     currentVideoElement.play().catch(error => {
         console.log('Autoplay blocked, consider user interaction');
     });
+};
+
+const handleVideoClick = () => {
+    if (currentVideoElement.paused) {
+        currentVideoElement.play();
+    } else {
+        currentVideoElement.pause();
+    }
 };
 
 const preloadNextVideos = () => {
@@ -137,14 +158,14 @@ const handleVideoEnd = () => {
         loadVideo();
     } else {
         // Option 1: Loop playback
-        // videoIndex = 0;
-        // loadVideo();
+        videoIndex = 0;
+        loadVideo();
 
         // Option 2: Stop playback
         // console.log('All videos played');
 
         // Option 3: Fetch more videos
-        fetchVideos().then(loadVideo);
+        // fetchVideos().then(loadVideo);
     }
 };
 
