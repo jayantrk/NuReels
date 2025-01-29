@@ -19,14 +19,14 @@ const fetchVideos = async () => {
 
     try {
         console.log('Fetching videos...');
-        const response = await fetch('http://localhost:5000/api/videos');
+        const response = await fetch('http://10.111.59.235:5000/api/videos');
         const data = await response.json();
         // console.log('Fetched videos:', data);
 
         if (data.videos?.length) {
             data.videos.forEach((video) => {
                 const videoFileName = video.filename;
-                const videoUrl = `http://localhost:5000/uploads/${encodeURIComponent(videoFileName)}`;
+                const videoUrl = `http://10.111.59.235:5000/uploads/${encodeURIComponent(videoFileName)}`;
                 if (!videoData.some(url => url === videoUrl)) {
                     // CHANGE TO GET TEAM NAME AND DESCRIPTION WHEN READY
                     videoData.push(videoUrl);
@@ -44,7 +44,7 @@ const fetchVideos = async () => {
     }
 };
 
-const createVideoElement = (videoUrl, team='Team R&D', description='test') => {
+const createVideoElement = (videoUrl, team='', description='') => {
     if (currentVideoElement) {
         currentVideoElement.removeEventListener('ended', handleVideoEnd);
         currentVideoElement.removeEventListener('click', handleVideoClick);
@@ -286,7 +286,7 @@ uploadForm.addEventListener('submit', async (e) => {
     formData.append('video', videoFile);
 
     try {
-        const response = await fetch('http://localhost:5000/api/upload', {
+        const response = await fetch('http://10.111.59.235:5000/api/upload', {
             method: 'POST',
             body: formData,
         });

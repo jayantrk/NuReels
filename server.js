@@ -133,6 +133,15 @@ app.get('/api/hello', (req, res) => {
   res.send('Hello World');
 });
 
+const express = require('express');
+const app = express();
+
+app.use(express.static('client')); // Serve files from 'public' directory
+
+app.listen(80, '0.0.0.0', () => {
+  console.log('Server running at http://10.111.59.235');
+});
+
 app.listen(5000, () => {
   console.log('Server is running on http://localhost:5000');
 });
