@@ -12,6 +12,15 @@
     <h1 class="heading-with-icon">
         <img src="nutanix.png" alt="Icon" class="icon">NuReels
     </h1>
+    <template id="video-template">
+        <div class="video-wrapper">
+        <video></video>
+        <div class="upload-status"></div>
+        <div class="description-overlay"></div>
+        <div class="team-overlay"></div>
+        </div>
+    </template>
+
     <div id="video-container"></div>
 
     <button id="upload-btn">Upload Reel</button>
@@ -34,7 +43,8 @@
         </div>
     </div>
 
-    <div id="upload-status"></div>
+    <!-- Leave at bottom of the page -->
+    <div id="preload-container" aria-hidden="true" style="display: none;"></div>
 </body>
 <script type="text/javascript" src="script.js"></script>
 </html>

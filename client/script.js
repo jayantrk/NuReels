@@ -1,4 +1,5 @@
 let currentVideoElement = null;
+let currentVideoWrapper = null;
 let videoData = [];
 let preloadedVideos = [];
 let videoIndex = 0;
@@ -18,18 +19,21 @@ const fetchVideos = async () => {
     isFetching = true;
 
     try {
-        console.log('Fetching videos...');
-        const response = await fetch('http://10.111.59.235:5000/api/videos');
+        const response = await fetch('http://localhost:5000/api/videos');
         const data = await response.json();
-        // console.log('Fetched videos:', data);
 
         if (data.videos?.length) {
             data.videos.forEach((video) => {
-                const videoFileName = video.filename;
-                const videoUrl = `http://10.111.59.235:5000/uploads/${encodeURIComponent(videoFileName)}`;
+                const url = video.url;
+                const videoTeamName = video.teamName;
+                const videoDescription = video.description;
+                const videoUrl = `http://localhost:5000${url}`;
                 if (!videoData.some(url => url === videoUrl)) {
-                    // CHANGE TO GET TEAM NAME AND DESCRIPTION WHEN READY
-                    videoData.push(videoUrl);
+                    videoData.push({
+                        url: videoUrl,
+                        teamName: videoTeamName,
+                        description: videoDescription
+                    });
                 }
             });
         }
@@ -44,20 +48,34 @@ const fetchVideos = async () => {
     }
 };
 
-const createVideoElement = (videoUrl, team='', description='') => {
-    if (currentVideoElement) {
-        currentVideoElement.removeEventListener('ended', handleVideoEnd);
-        currentVideoElement.removeEventListener('click', handleVideoClick);
-        currentVideoElement.remove();
+const createVideoElement = (videoObject) => {
+    videoUrl = videoObject.url;
+    team = videoObject.teamName;
+    description = videoObject.description;
+    if (currentVideoWrapper) {
+        const prevVideo = currentVideoWrapper.querySelector('video');
+        prevVideo.removeEventListener('ended', handleVideoEnd);
+        prevVideo.removeEventListener('click', handleVideoClick);
+
+        currentVideoWrapper.remove();
+        currentVideoWrapper = null;
     }
+
+    const template = document.getElementById('video-template');
+    const videoWrapper = template.content.cloneNode(true).children[0];
+    let currentVideoElement = videoWrapper.querySelector('video');
+    const statusElement = videoWrapper.querySelector('.upload-status');
+    const descriptionOverlay = videoWrapper.querySelector('.description-overlay');
+    const teamOverlay = videoWrapper.querySelector('.team-overlay');
     const existingPreload = preloadedVideos.find(v => v.src === videoUrl);
+
     if (existingPreload) {
+        currentVideoElement.replaceWith(existingPreload);
         currentVideoElement = existingPreload;
         currentVideoElement.style.display = 'block';
         // Remove from preload list
         preloadedVideos = preloadedVideos.filter(v => v !== existingPreload);
     } else {
-        currentVideoElement = document.createElement('video');
         currentVideoElement.src = videoUrl;
     }
     currentVideoElement.controls = false;
@@ -66,34 +84,24 @@ const createVideoElement = (videoUrl, team='', description='') => {
     currentVideoElement.autoplay = true;
     currentVideoElement.muted = true;
 
-    const videoWrapper = document.createElement('div');
-    videoWrapper.className = 'video-wrapper';
-    videoWrapper.appendChild(currentVideoElement);
-
-    const descriptionOverlay = document.createElement('div');
-    descriptionOverlay.className = 'description-overlay';
     descriptionOverlay.textContent = description;
-    const teamOverlay = document.createElement('div');
-    teamOverlay.className = 'team-overlay';
     teamOverlay.textContent = team;
 
-    videoWrapper.appendChild(descriptionOverlay);
-    videoWrapper.appendChild(teamOverlay);
     videoContainer.appendChild(videoWrapper);
+    videoWrapper.uploadStatus = statusElement;
+    currentVideoWrapper = videoWrapper
 
     currentVideoElement.addEventListener('click', handleVideoClick);
     currentVideoElement.addEventListener('ended', handleVideoEnd);
+
     currentVideoElement.play().catch(error => {
         console.log('Autoplay blocked, consider user interaction');
     });
 };
 
-const handleVideoClick = () => {
-    if (currentVideoElement.paused) {
-        currentVideoElement.play();
-    } else {
-        currentVideoElement.pause();
-    }
+const handleVideoClick = (event) => {
+    const video = event.currentTarget;
+    video[video.paused ? 'play' : 'pause']();
 };
 
 const preloadNextVideos = () => {
@@ -103,13 +111,13 @@ const preloadNextVideos = () => {
     const targetUrls = new Set(
         targetIndices
             .filter(idx => idx >= 0 && idx < videoData.length)
-            .map(idx => videoData[idx])
+            .map(idx => videoData[idx].url)
     );
 
     // Cleanup: Remove videos outside the preload window
     preloadedVideos.forEach((video, index) => {
-        if (!targetUrls.has(video.src)) {
-            console.log('Removing video:', video.src);
+        if (video && !targetUrls.has(video.src)) {
+            // console.log('Removing video:', video.src);
             video.src = "";
             video.remove();
             preloadedVideos[index] = null;
@@ -122,26 +130,27 @@ const preloadNextVideos = () => {
     targetIndices.forEach((targetIndex) => {
         if (targetIndex < 0 || targetIndex >= videoData.length) return;
 
-        const videoUrl = videoData[targetIndex];
+        const videoUrl = videoData[targetIndex].url;
         const isAlreadyPreloaded = preloadedVideos.some(v => v.src === videoUrl);
         if (!isAlreadyPreloaded) {
-            const preloadVideo = document.createElement("video");
+            const preloadVideo = document.createElement('video');
+            preloadVideo.src = videoUrl;
             preloadVideo.preload = "auto";
             preloadVideo.muted = true;
-            preloadVideo.src = videoUrl;
             preloadVideo.style.display = "none";
-            document.body.appendChild(preloadVideo);
+
+            const preloadContainer = document.getElementById('preload-container') ||
+            preloadContainer.appendChild(preloadVideo);
             preloadedVideos.push(preloadVideo);
         }
     });
 
-    console.log('Preloaded videos:', preloadedVideos.map(v => v.src));
+    // console.log('Preloaded videos:', preloadedVideos.map(v => v.src));
 };
 
 const loadVideo = () => {
     videoContainer.innerHTML = '';
     if (videoData.length > videoIndex) {
-        console.log(videoIndex, videoData.length - 1);
         createVideoElement(videoData[videoIndex]);
         preloadNextVideos();
     } else {
@@ -151,7 +160,6 @@ const loadVideo = () => {
 };
 
 const handleVideoEnd = () => {
-    console.log('videoIndex:', videoIndex);
     videoIndex++;
 
     // Fetch more videos
@@ -286,7 +294,7 @@ uploadForm.addEventListener('submit', async (e) => {
     formData.append('video', videoFile);
 
     try {
-        const response = await fetch('http://10.111.59.235:5000/api/upload', {
+        const response = await fetch('http://localhost:5000/api/upload', {
             method: 'POST',
             body: formData,
         });
@@ -307,16 +315,22 @@ uploadForm.addEventListener('submit', async (e) => {
 });
 
 function showUploadMessage(message, isError = false) {
-    uploadStatus.textContent = message;
-    console.log("HIIIIII")
-    // uploadStatus.style.color = isError ? '#ff4444' : '#4CAF50';
-    // uploadStatus.style.opacity = '1';
+    // Get the CURRENT video wrapper's status element
+    const currentStatus = document.querySelector('.video-wrapper:last-child .upload-status');
+
+    if (!currentStatus) {
+        console.error('No video wrapper found for status message');
+        return;
+    }
+
+    currentStatus.textContent = message;
+    currentStatus.style.color = isError ? '#FF5252' : '#76FF03';
+    currentStatus.style.opacity = '1';
 
     setTimeout(() => {
-        uploadStatus.style.opacity = '0';
+        currentStatus.style.opacity = '0';
         setTimeout(() => {
-            uploadStatus.textContent = '';
-        }, 2500);
-
-    }, 2000); // Show message for 1s before fading
+            currentStatus.textContent = '';
+        }, 1000);
+    }, 2000);
 }

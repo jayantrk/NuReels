@@ -25,41 +25,24 @@ button {
 button:hover {
   background-color: #444444;
 }
-#video-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  overflow: hidden;
-  scroll-snap-type: y mandatory;
-  scroll-behavior: smooth;
-  height: 100vh;
-  width: 100%;
-  position: relative;
-  margin: 40px auto;
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-/* Hide scrollbar for Chrome/Safari */
-#video-container::-webkit-scrollbar {
-  display: none;
-}
 .video-wrapper {
   width: 100%;
   max-width: 800px;
-  max-height: 80vh;
   position: relative;
   margin: 10px auto;
   flex-shrink: 0;
   scroll-snap-align: start;
   border-radius: 15px;
-  overflow: hidden;
-  display: block;
-  aspect-ratio: 16/9;
+  overflow: visible;
+  padding-bottom: 40px;
 }
+
 .video-wrapper::before {
   content: "";
   display: block;
-  padding-top: 56.25%; /* 16:9 ratio (100 / 16 * 9) */
+  padding-top: 56.25%; /* 16:9 ratio */
+  border-radius: 15px;
+  overflow: hidden;
 }
 
 video {
@@ -70,6 +53,21 @@ video {
   height: 100%;
   object-fit: cover;
   border-radius: 15px;
+}
+
+.upload-status {
+  position: absolute;
+  top: 100%;
+  width: 100%;
+  text-align: center;
+  color: white;
+  padding: 10px 0;
+  font-size: 14px;
+  transition: opacity 0.5s ease;
+  opacity: 0;
+  z-index: 2;
+  left: 0;
+  transform: translateY(10px);
 }
 #upload-btn {
   position: fixed;
@@ -88,11 +86,6 @@ video {
 #file-input {
   display: none;
 }
-#upload-status {
-  margin-top: 10px;
-  font-size: 14px;
-}
-
 .heading-with-icon {
   display: flex;
   align-items: center;
@@ -129,13 +122,13 @@ video {
 
 .modal {
   display: none;
-  position: fixed; 
-  z-index: 1; 
+  position: fixed;
+  z-index: 1;
   left: 0;
   top: 0;
   width: 100%;
-  height: 100%; 
-  background-color: rgba(0, 0, 0, 0.4); 
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.4);
 }
 
 .modal-content {
