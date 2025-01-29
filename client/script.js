@@ -284,16 +284,17 @@ fileInput.addEventListener('change', async (e) => {
 
 function showUploadMessage(message, isError = false) {
     uploadStatus.textContent = message;
-    uploadStatus.style.color = isError ? 'red' : 'green';
-    uploadStatus.style.opacity = '1';
+    console.log("HIIIIII")
+    // uploadStatus.style.color = isError ? '#ff4444' : '#4CAF50';
+    // uploadStatus.style.opacity = '1';
 
-    setTimeout(() => {
-        uploadStatus.style.opacity = '0';
-        setTimeout(() => {
-            uploadStatus.textContent = '';
-        }, 2500);
-
-    }, 2000); // Show message for 2s before fading
+    // setTimeout(() => {
+    //     uploadStatus.style.opacity = '0';
+    //     // Clear text after transition completes
+    //     setTimeout(() => {
+    //         uploadStatus.textContent = '';
+    //     }, 300); // Match transition duration
+    // }, 2500); // Show message for 2.5 seconds total
 }
 
 // Trigger file input click on button click

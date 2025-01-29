@@ -35,7 +35,7 @@ button:hover {
   height: 100vh;
   width: 100%;
   position: relative;
-  margin: 20px auto;
+  margin: 40px auto;
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
@@ -43,23 +43,23 @@ button:hover {
 #video-container::-webkit-scrollbar {
   display: none;
 }
-/* Wrapper for each video to maintain 9:16 aspect ratio */
 .video-wrapper {
   width: 100%;
-  max-width: 337.5px;
+  max-width: 800px;
+  max-height: 80vh;
   position: relative;
-  margin: 10px 0;
+  margin: 10px auto;
   flex-shrink: 0;
   scroll-snap-align: start;
   border-radius: 15px;
   overflow: hidden;
-  display: inline-block;
+  display: block;
+  aspect-ratio: 16/9;
 }
-/* Padding-top trick to maintain 9:16 aspect ratio */
 .video-wrapper::before {
   content: "";
   display: block;
-  padding-top: 177.78%; /* 16:9 ratio (100 / 9 * 16) */
+  padding-top: 56.25%; /* 16:9 ratio (100 / 16 * 9) */
 }
 
 video {
@@ -92,9 +92,7 @@ video {
   margin-top: 10px;
   font-size: 14px;
 }
-#upload-status {
-  transition: opacity 2.5s ease-in-out;
-}
+
 .heading-with-icon {
   display: flex;
   align-items: center;
