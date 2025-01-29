@@ -133,8 +133,6 @@ app.get('/api/hello', (req, res) => {
   res.send('Hello World');
 });
 
-const express = require('express');
-
 app.use(express.static('client')); // Serve files from 'public' directory
 
 app.listen(5000, () => {
