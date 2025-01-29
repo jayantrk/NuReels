@@ -30,16 +30,17 @@
         <div class="modal-content">
             <span id="close-btn" class="close-btn">&times;</span>
             <form id="upload-form">
-                <label for="team-name">Team Name:</label>
+                <label for="team-name">Team Name</label>
                 <input type="text" id="team-name" name="team-name" required><br><br>
 
-                <label for="description">Description:</label>
+                <label for="description">Description</label>
                 <textarea id="description" name="description" required></textarea><br><br>
 
-                <label for="video-file">Select Video:</label>
+                <label for="video-file">Upload Your Video</label>
                 <input type="file" id="video-file" accept="video/mp4, video/quicktime" required><br><br>
+                <progress id="upload-progress" value="0" max="100" style="display: none;text-align:center"></progress>
 
-                <button type="submit">Submit</button>
+                <button type="submit" class="submit-btn">Submit!</button>
             </form>
         </div>
     </div>

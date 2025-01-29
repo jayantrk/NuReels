@@ -14,6 +14,7 @@ const uploadForm = document.getElementById('upload-form');
 const videoFileInput = document.getElementById('video-file');
 const uploadStatus = document.getElementById('upload-status');
 const closeBtn = document.getElementById('close-btn');
+const progressBar = document.getElementById("upload-progress");
 const SERVER = "http://10.111.59.235:5000"
 
 const fetchVideos = async () => {
@@ -318,32 +319,52 @@ uploadForm.addEventListener('submit', async (e) => {
         return;
     }
 
-    showUploadMessage('Uploading...', false);
+    // showUploadMessage('Uploading...', false);
 
     const formData = new FormData();
     formData.append('teamName', teamName);
     formData.append('description', description);
     formData.append('video', videoFile);
 
-    try {
-        const response = await fetch(`${SERVER}/api/upload`, {
-            method: 'POST',
-            body: formData,
-        });
+    // Show progress bar
+    progressBar.style.display = 'block';
+    progressBar.value = 0;
 
-        const data = await response.json();
-        if (data.videoUrl) {
-            showUploadMessage('Video uploaded successfully!');
-            fetchVideos(); // Fetch new videos to render after upload
-            uploadForm.reset();  // Reset the form
-            uploadFormContainer.style.display = 'none';  // Hide form after successful submission
-        } else if (data.error) {
-            showUploadMessage(data.error, true);
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `${SERVER}/api/upload`, true);
+
+
+    xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+            const percent = (event.loaded / event.total) * 100;
+            progressBar.value = percent;
         }
-    } catch (error) {
-        showUploadMessage('Upload failed!', true);
-        console.error('Error uploading video:', error);
-    }
+    };
+
+    xhr.onload = async () => {
+        progressBar.style.display = 'none'; 
+
+        if (xhr.status === 200) {
+            const data = JSON.parse(xhr.responseText);
+            if (data.videoUrl) {
+                showUploadMessage('Video uploaded successfully!');
+                fetchVideos();
+                uploadForm.reset();
+                uploadFormContainer.style.display = 'none';
+            } else if (data.error) {
+                showUploadMessage(data.error, true);
+            }
+        } else {
+            showUploadMessage('Upload failed!', true);
+        }
+    };
+
+    xhr.onerror = () => {
+        showUploadMessage('Upload failed! Please try again.', true);
+        progressBar.style.display = 'none';
+    };
+
+    xhr.send(formData);
 });
 
 function showUploadMessage(message, isError = false) {
