@@ -14,11 +14,27 @@
     </h1>
     <div id="video-container"></div>
 
-    <button id="upload-btn">Upload Video</button>
-    <input type="file" id="file-input" accept="video/mp4, video/quicktime" multiple>
+    <button id="upload-btn">Upload Reel</button>
+
+    <div id="upload-form-container" class="modal" style="display:none;">
+        <div class="modal-content">
+            <span id="close-btn" class="close-btn">&times;</span>
+            <form id="upload-form">
+                <label for="team-name">Team Name:</label>
+                <input type="text" id="team-name" name="team-name" required><br><br>
+
+                <label for="description">Description:</label>
+                <textarea id="description" name="description" required></textarea><br><br>
+
+                <label for="video-file">Select Video:</label>
+                <input type="file" id="video-file" accept="video/mp4, video/quicktime" required><br><br>
+
+                <button type="submit">Submit</button>
+            </form>
+        </div>
+    </div>
 
     <div id="upload-status"></div>
-
 </body>
 <script type="text/javascript" src="script.js"></script>
 </html>

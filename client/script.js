@@ -7,20 +7,25 @@ let lastScrollTime = 0;
 const SCROLL_DELAY = 500;
 const videoContainer = document.getElementById('video-container');
 const uploadBtn = document.getElementById('upload-btn');
-const fileInput = document.getElementById('file-input');
+const uploadFormContainer = document.getElementById('upload-form-container');
+const uploadForm = document.getElementById('upload-form');
+const videoFileInput = document.getElementById('video-file');
 const uploadStatus = document.getElementById('upload-status');
+const closeBtn = document.getElementById('close-btn');
 
 const fetchVideos = async () => {
     if (isFetching) return;
     isFetching = true;
 
     try {
+        console.log('Fetching videos...');
         const response = await fetch('http://localhost:5000/api/videos');
         const data = await response.json();
         // console.log('Fetched videos:', data);
 
         if (data.videos?.length) {
-            data.videos.forEach((videoFileName) => {
+            data.videos.forEach((video) => {
+                const videoFileName = video.filename;
                 const videoUrl = `http://localhost:5000/uploads/${encodeURIComponent(videoFileName)}`;
                 if (!videoData.some(url => url === videoUrl)) {
                     // CHANGE TO GET TEAM NAME AND DESCRIPTION WHEN READY
@@ -238,47 +243,66 @@ fetchVideos().then(loadVideo);
 videoContainer.addEventListener('wheel', handleScroll, { passive: false });
 document.addEventListener('keydown', handleKeyDown);
 
-// Handle file selection
-fileInput.addEventListener('change', async (e) => {
-    const file = e.target.files[0];
+// Function to show/hide the upload form
+uploadBtn.addEventListener('click', () => {
+    uploadFormContainer.style.display = 'block';  // Show form
+});
+
+// Close the form when the close button (x) is clicked
+closeBtn.addEventListener('click', () => {
+    uploadFormContainer.style.display = 'none';  // Hide form
+});
+
+// Handle form submission
+uploadForm.addEventListener('submit', async (e) => {
+    e.preventDefault();  // Prevent the default form submission if any
+
+    const teamName = document.getElementById('team-name').value;
+    const description = document.getElementById('description').value;
+    const videoFile = videoFileInput.files[0];
+
+    if (!videoFile) {
+        showUploadMessage('Please select a video file to upload.', true);
+        return;
+    }
+
+    // Validate file type
     const allowedTypes = ['video/mp4', 'video/quicktime'];
     const maxSizeMB = 50;
-    if (!allowedTypes.includes(file.type)) {
-        uploadStatus.textContent = 'Only MP4 and MOV files are allowed!';
-        e.target.value = '';
+    if (!allowedTypes.includes(videoFile.type)) {
+        showUploadMessage('Only MP4 and MOV files are allowed!', true);
         return;
     }
-    if (file.size > maxSizeMB * 1024 * 1024) {
-        uploadStatus.textContent = 'File size exceeds 100MB limit!';
-        e.target.value = '';
+    if (videoFile.size > maxSizeMB * 1024 * 1024) {
+        showUploadMessage('File size exceeds 50MB limit!', true);
         return;
     }
 
-    if (file) {
-        showUploadMessage('Uploading...');
-        const formData = new FormData();
-        formData.append('video', file);
+    showUploadMessage('Uploading...', false);
 
-        try {
-            const response = await fetch('http://localhost:5000/api/upload', {
-                method: 'POST',
-                body: formData,
-            });
+    const formData = new FormData();
+    formData.append('teamName', teamName);
+    formData.append('description', description);
+    formData.append('video', videoFile);
 
-            const data = await response.json();
-            if (data.videoUrl) {
-                showUploadMessage('Video uploaded successfully!');
-                fetchVideos(); // Fetch new videos to render after upload
-            } else if (data.error) {
-                showUploadMessage(data.error, true);
-            }
+    try {
+        const response = await fetch('http://localhost:5000/api/upload', {
+            method: 'POST',
+            body: formData,
+        });
 
-        } catch (error) {
-            showUploadMessage('Upload failed!', true);
-            console.error('Error uploading video:', error);
+        const data = await response.json();
+        if (data.videoUrl) {
+            showUploadMessage('Video uploaded successfully!');
+            fetchVideos(); // Fetch new videos to render after upload
+            uploadForm.reset();  // Reset the form
+            uploadFormContainer.style.display = 'none';  // Hide form after successful submission
+        } else if (data.error) {
+            showUploadMessage(data.error, true);
         }
-    } else {
-        uploadStatus.textContent = 'Please upload only .mp4 or .mov files.';
+    } catch (error) {
+        showUploadMessage('Upload failed!', true);
+        console.error('Error uploading video:', error);
     }
 });
 
@@ -288,16 +312,11 @@ function showUploadMessage(message, isError = false) {
     // uploadStatus.style.color = isError ? '#ff4444' : '#4CAF50';
     // uploadStatus.style.opacity = '1';
 
-    // setTimeout(() => {
-    //     uploadStatus.style.opacity = '0';
-    //     // Clear text after transition completes
-    //     setTimeout(() => {
-    //         uploadStatus.textContent = '';
-    //     }, 300); // Match transition duration
-    // }, 2500); // Show message for 2.5 seconds total
-}
+    setTimeout(() => {
+        uploadStatus.style.opacity = '0';
+        setTimeout(() => {
+            uploadStatus.textContent = '';
+        }, 2500);
 
-// Trigger file input click on button click
-uploadBtn.addEventListener('click', () => {
-    fileInput.click();
-});
+    }, 2000); // Show message for 1s before fading
+}
