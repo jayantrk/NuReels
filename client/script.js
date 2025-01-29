@@ -14,13 +14,14 @@ const uploadForm = document.getElementById('upload-form');
 const videoFileInput = document.getElementById('video-file');
 const uploadStatus = document.getElementById('upload-status');
 const closeBtn = document.getElementById('close-btn');
+const SERVER = "http://10.111.59.235:5000"
 
 const fetchVideos = async () => {
     if (isFetching) return;
     isFetching = true;
 
     try {
-        const response = await fetch('http://localhost:5000/api/videos');
+        const response = await fetch(`${SERVER}/api/videos`);
         const data = await response.json();
 
         if (data.videos?.length) {
@@ -28,7 +29,7 @@ const fetchVideos = async () => {
                 const url = video.url;
                 const videoTeamName = video.teamName;
                 const videoDescription = video.description;
-                const videoUrl = `http://localhost:5000${url}`;
+                const videoUrl = `${SERVER}${url}`;
                 if (!videoData.some(url => url === videoUrl)) {
                     videoData.push({
                         url: videoUrl,
@@ -98,7 +99,9 @@ const createVideoElement = (videoObject) => {
     currentVideoElement.addEventListener('ended', handleVideoEnd);
 
     currentVideoElement.play().catch(error => {
-        console.log('Autoplay blocked, consider user interaction');
+        console.log('Autoplay blocked:', error);
+        videoIndex++;
+        loadVideo();
     });
 };
 
@@ -305,13 +308,13 @@ uploadForm.addEventListener('submit', async (e) => {
 
     // Validate file type
     const allowedTypes = ['video/mp4', 'video/quicktime'];
-    const maxSizeMB = 50;
+    const maxSizeMB = 100;
     if (!allowedTypes.includes(videoFile.type)) {
         showUploadMessage('Only MP4 and MOV files are allowed!', true);
         return;
     }
     if (videoFile.size > maxSizeMB * 1024 * 1024) {
-        showUploadMessage('File size exceeds 50MB limit!', true);
+        showUploadMessage('File size exceeds 100MB limit!', true);
         return;
     }
 
@@ -323,7 +326,7 @@ uploadForm.addEventListener('submit', async (e) => {
     formData.append('video', videoFile);
 
     try {
-        const response = await fetch('http://localhost:5000/api/upload', {
+        const response = await fetch(`${SERVER}/api/upload`, {
             method: 'POST',
             body: formData,
         });
