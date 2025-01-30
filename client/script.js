@@ -308,13 +308,13 @@ uploadForm.addEventListener('submit', async (e) => {
 
     // Validate file type
     const allowedTypes = ['video/mp4', 'video/quicktime'];
-    const maxSizeMB = 100;
+    const maxSizeMB = 200;
     if (!allowedTypes.includes(videoFile.type)) {
         showUploadMessage('Only MP4 and MOV files are allowed!', true);
         return;
     }
     if (videoFile.size > maxSizeMB * 1024 * 1024) {
-        showUploadMessage('File size exceeds 100MB limit!', true);
+        showUploadMessage('File size exceeds 200MB limit!', true);
         return;
     }
 
