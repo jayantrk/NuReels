@@ -171,7 +171,7 @@ const preloadNextVideos = () => {
             preloadVideo.muted = true;
             preloadVideo.style.display = "none";
 
-            const preloadContainer = document.getElementById('preload-container') ||
+            const preloadContainer = document.getElementById('preload-container')
             preloadContainer.appendChild(preloadVideo);
             preloadedVideos.push(preloadVideo);
         }
@@ -341,7 +341,7 @@ uploadForm.addEventListener('submit', async (e) => {
     };
 
     xhr.onload = async () => {
-        progressBar.style.display = 'none'; 
+        progressBar.style.display = 'none';
 
         if (xhr.status === 200) {
             const data = JSON.parse(xhr.responseText);
